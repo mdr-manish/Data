@@ -1,0 +1,141 @@
+package org.project;
+
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import javax.mail.*;
+import javax.mail.search.SubjectTerm;
+import java.io.FileOutputStream;
+import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class App {
+    // configure for outlook IMAP server
+    //private static final String serverHost = "outlook.office365.com";
+    private static final String serverHost = "imap.gmail.com";
+    private static final String emailAddress = "manish2022job@gmail.com";
+    private static final String emailPassword = "igsv geqg mqwk smpq";
+    private static final int port = 993;
+    private static final String SPECIFIC_SUBJECT ="Specific Subject";
+
+    public static void main(String[] args) {
+
+        Properties properties = new Properties();
+        properties.setProperty("mail.store.protocol","imaps");
+        properties.setProperty("mail.imaps.host",serverHost);
+        properties.setProperty("mail.imaps.port", String.valueOf(port));
+
+        try{
+            // connect to the server host, email address, email password
+            Session session =Session.getInstance(properties,null);
+            Store store = session.getStore();
+            store.connect(serverHost,emailAddress,emailPassword);
+
+
+            // get the folder access in the inbox
+            Folder inbox = store.getFolder("INBOX");
+            inbox.open(Folder.READ_ONLY);
+
+            // Search for specific emails with the given subject
+            Message [] messages = inbox.search(new SubjectTerm(SPECIFIC_SUBJECT));
+
+            // Create a new Excel workbook
+            Workbook workbook = new XSSFWorkbook();
+
+            // Create a worksheet
+            Sheet worksheet = workbook.createSheet("Outlook Extracted Data");
+
+            // Header for the Data
+            String[] headers = {
+                    "No.",
+                    "メール送信者",
+                    "メール件名",
+                    "紹介会社",
+                    "名前",
+                    "読み仮名",
+                    "国籍",
+                    "応募日",
+                    "住所",
+                    "年齢",
+                    "日本語能力",
+                    "経験",
+                    "現在の年収",
+                    "希望の年収",
+                    "最低希望年収",
+                    "コメント",
+                    "ステータス",
+                    "書類審査",
+                    "一次面接日",
+                    "二次面接日",
+                    "内定日",
+                    "入社日"
+            };
+            // write headers in the first row
+            Row headerRow = worksheet.createRow(0);
+            for(int i = 0; i < headers.length; i++){
+                headerRow.createCell(i).setCellValue(headers[i]);
+            }
+            // Email's extracted corresponding value from email body text
+            int rowNum = 1;
+            // auto increment for 番号
+            int number = 1;
+
+            for (Message message : messages){
+
+                // get the email header text and translate to string value
+                String emailSender = message.getFrom()[0].toString();
+                System.out.println(emailSender);
+                // get the email subject text
+                String emailSubject = message.getSubject();
+                // get the email body text
+                String emailBody = String.valueOf(message.getContent());
+                System.out.println("EmailBody: " + emailBody);
+                //Email body change to plain text
+                //String plainTextBody = emailBody;
+                // Extract header values after " *: " symbol
+                Pattern pattern = Pattern.compile("([^\\s:]+)\\s*:\\s*(.*?)\\s", Pattern.DOTALL);
+                Matcher matcher = pattern.matcher(emailBody);
+
+                // create a new row for each email
+                Row row = worksheet.createRow(rowNum++);
+
+                // Iterate through matches and set the values in Excel cells
+                int columnNum = 2;
+                while(matcher.find()){
+                    // auto increment of 番号
+                    row.createCell(0).setCellValue(number++);
+
+                    // set the email sender in the second column
+                    row.createCell(1).setCellValue(emailSender);
+
+                    // set the email subject in the second column
+                    row.createCell(2).setCellValue(emailSubject);
+
+                    String headerValue = matcher.group(1).trim();
+                    row.createCell(columnNum++).setCellValue(headerValue);
+                }
+
+
+                // mark the message as read
+                message.setFlag(Flags.Flag.SEEN, true);
+            }
+
+            // save the workbook to a physical file on the disk
+            String filePath ="C:/Users/" + System.getProperty("user.name") + "/Downloads/output.xlsx";
+
+            try(FileOutputStream fileOutputStream = new FileOutputStream(filePath)){
+                workbook.write(fileOutputStream);
+                System.out.println("Excel file has been created successfully at :" + filePath);
+            } catch (Exception e){
+                System.out.println("Error occurred while saving the Excel file: " + e.getMessage());
+            }
+
+            store.close();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+}

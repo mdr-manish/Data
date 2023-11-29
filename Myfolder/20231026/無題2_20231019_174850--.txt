@@ -1,0 +1,87 @@
+using MailKit;
+using MailKit.Net.Imap;
+using MailKit.Search;
+using OfficeOpenXml;
+
+namespace ExtractingData
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            // Mail server connection settings
+            string emailServer = "imap.gmail.com";
+            string emailAddress = "emailaddress";
+            string emailPassword = "password";
+
+            using var client = new ImapClient();
+            client.Connect(emailServer, 993, true);
+            client.Authenticate(emailAddress, emailPassword);
+
+            // Open the inbox folder
+            var inbox = client.Inbox;
+            inbox.Open(FolderAccess.ReadOnly);
+
+            // Search for specific emails 
+            var searchResults = inbox.Search(SearchQuery.SubjectContains("Specific Subject"));
+
+            // Create a new Excel package
+            using (var package = new ExcelPackage())
+            {
+                // Add a worksheet to the Excel package
+                var worksheet = package.Workbook.Worksheets.Add("Outlook Data");
+
+                // Initialize row counter 
+                int row = 1;
+
+                // Iterate through the items in the Inbox folder
+                foreach (var index in searchResults)
+                {
+                    var message = inbox.GetMessage(index);
+
+                    // Extract sender, subject, and body
+                    string emailSender = message.From.ToString();
+                    string emailSubject = message.Subject;
+                    string emailBody = message.TextBody;
+
+                    // Check for null or empty body
+                    if (!string.IsNullOrEmpty(emailBody))
+                    {
+                        string pattern = " *: ";
+                        int startIndex = emailBody.IndexOf(pattern);
+
+                        // extract specifice phrases from the email body
+                        string[] phrasesToExtract = new string[]
+                        {
+                            "Email Sender",
+                            "Email Subject",
+                            "No", "紹介会社", "名前", "ヨミガナ", "国籍", "応募日", "住まい", "年齢", "日本語能力", "経験", "現年収", "希望年収", "最低希望年収", "所感", "ステータス", "書類選考", "一次面接日","二次面接日", "内定日", "入社日"
+                        };
+                        List<string> extractedPhrases = new List<string>();
+                        foreach(string phraseToExtract in phrasesToExtract)
+                        {
+                            extractedPhrases.Add(extractedPhrasesFromEmailBody(emailBody, phraseToExtract));
+                        }
+                        if (startIndex > 0)
+                        {
+                            string emailHeader = emailBody.Substring(0, startIndex);
+                            string extractedtext = emailbody.substring(startindex + pattern.length).trim();
+
+                            // Write data to Excel worksheet
+                            worksheet.Cells[row, 1].Value = emailSender;
+                            worksheet.Cells[row, 2].Value = emailSubject;
+                            worksheet.Cells[row, 3].Value = emailHeader;
+                            worksheet.Cells[row, 4, A1].Value = extractedText;
+
+                            // Move to the next row for the new email
+                            row++;
+                        }
+                    }
+                }
+                // Save the Excel file 
+                package.SaveAs(new System.IO.FileInfo("OutlookDataDocument.xlsx"));
+                Console.WriteLine("Outlook data extracted and saved to the Excel file.");
+            }
+        }
+    }
+}

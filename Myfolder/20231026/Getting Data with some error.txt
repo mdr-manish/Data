@@ -1,0 +1,164 @@
+package org.example;
+
+import javax.mail.*;
+import javax.mail.internet.MimeMultipart;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import java.io.FileOutputStream;
+import java.util.Arrays;
+import java.util.Properties;
+
+public class OutlookEmailExtract {
+
+    private static final String Email_Regex = "<(.*?)>";
+    private static final Pattern Email_Pattern = Pattern.compile(Email_Regex);
+
+    private final String serverHost;
+    private final String emailAddress;
+    private final String emailPassword;
+    private final int port;
+    private final String[] headers;
+    private final String bodyRegexPattern;
+
+    public OutlookEmailExtract (String serverHost, String emailAddress, String emailPassword, int port, String[] headers){
+        this.serverHost = serverHost;
+        this.emailAddress = emailAddress;
+        this.emailPassword = emailPassword;
+        this.port = port;
+        this.headers = headers;
+        this.bodyRegexPattern = "(" + String.join("|", headers) + "):\\s+(.+?)(?=(?:\\s+[^\\s:]+:)|$)";
+    }
+
+    public void processEmailGenerateExcel(){
+        Properties properties = new Properties();
+        properties.setProperty("mail.store.protocol","imaps");
+        properties.setProperty("mail.imaps.host",serverHost);
+        properties.setProperty("mail.imaps.port",String.valueOf(port));
+
+        try(Workbook workbook = new XSSFWorkbook()){
+            // Connection to the email server
+            Session session = Session.getInstance(properties, null);
+            Store store = session.getStore();
+            store.connect(serverHost, emailAddress, emailPassword);
+
+            // Accessing the inbox folder
+            Folder inbox = store.getFolder("INBOX");
+            inbox.open(Folder.READ_WRITE);
+            Message[] messages = inbox.getMessages();
+
+            // Creating Excel worksheet and headers
+            Sheet worksheet = workbook.createSheet("Outlook Extracted Data");
+            Row headerRow = worksheet.createRow(0);
+            for (int i = 0; i < headers.length; i++) {
+                headerRow.createCell(i).setCellValue(headers[i]);
+            }
+            // Processing emails and populating Excel
+            int rowNum = 1;
+            int number = 1;
+            for (Message message : messages) {
+                try {
+                    String emailSender = extractSenderEmail(message);
+                    String emailSubject = message.getSubject();
+                    String emailBody = getEmailBody(message);
+
+                    Matcher headerMatcher =Pattern.compile(bodyRegexPattern).matcher(emailBody);
+
+                    Row row = worksheet.createRow(rowNum++);
+                    row.createCell(0).setCellValue(number++);
+                    row.createCell(1).setCellValue(emailSender);
+                    row.createCell(2).setCellValue(emailSubject);
+
+                    int columnNum = 3;
+                    while (headerMatcher.find()) {
+                        String header = headerMatcher.group(1).trim();
+                        String value = headerMatcher.group(2).trim();
+                        if (Arrays.asList(headers).contains(header)) {
+                            row.createCell(columnNum++).setCellValue(value);
+                        }
+                    }
+                    // Fill empty cells with ""
+                    for (int i = columnNum; i < headers.length; i++) {
+                        row.createCell(i).setCellValue("");
+                    }
+
+                    message.setFlag(Flags.Flag.SEEN, true);
+                } catch (Exception e) {
+                    System.out.println("Error processing email: " + e.getMessage());
+                }
+            }
+
+            // Saving the workbook to a physical file on the disk
+            String filePath = "C:/Users/" + System.getProperty("user.name") + "/Downloads/output.xlsx";
+            try (FileOutputStream fileOutputStream = new FileOutputStream(filePath)) {
+                workbook.write(fileOutputStream);
+                System.out.println("Excel file has been created successfully at :" + filePath);
+            } catch (Exception e) {
+                System.out.println("Error occurred while saving the Excel file: " + e.getMessage());
+            }
+
+            store.close();
+        } catch (Exception e) {
+            System.out.println("An unexpected error occurred: " + e.getMessage());
+        }
+    }
+
+    private String extractSenderEmail(Message message) throws MessagingException {
+        Address[] senders = message.getFrom();
+        if (senders != null && senders.length > 0) {
+            Matcher matcher = Email_Pattern.matcher(senders[0].toString());
+            if (matcher.find()) {
+                return matcher.group(1);
+            }
+        }
+        return "";
+    }
+
+    private String getEmailBody(Message message) throws Exception {
+        Object content = message.getContent();
+        if (content instanceof String) {
+            return (String) content;
+        } else if (content instanceof MimeMultipart) {
+            MimeMultipart mimeMultipart = (MimeMultipart) content;
+            return mimeMultipart.getBodyPart(0).getContent().toString();
+        } else {
+            return "";
+        }
+    }
+
+    public static void main(String[] args) {
+        String serverHost = "imap.gmail.com";
+        String emailAddress = "manish2022job@gmail.com";
+        String emailPassword = "igsv geqg mqwk smpq";
+        int port = 993;
+
+        String[] headers = {
+                "No.",
+                "メール送信者",
+                "メール件名",
+                "紹介会社",
+                "名前",
+                "読み仮名",
+                "国籍",
+                "応募日",
+                "住所",
+                "年齢",
+                "日本語能力",
+                "経験",
+                "現在の年収",
+                "希望の年収",
+                "最低希望年収",
+                "コメント",
+                "ステータス",
+                "書類審査",
+                "一次面接日",
+                "二次面接日",
+                "内定日",
+                "入社日"
+        };
+
+        OutlookEmailExtract outlookEmailExtract = new OutlookEmailExtract(serverHost, emailAddress, emailPassword, port, headers);
+        outlookEmailExtract.processEmailGenerateExcel();
+    }
+}

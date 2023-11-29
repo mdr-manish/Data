@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Async Practice</title>
+  </head>
+  <body>
+    <h1>Javascript Series</h1>
+    <button id="start">Start</button>
+    <button id="stop">Stop</button>
+  </body>
+  <script>
+    let intervalId;
+    const setDate = function () {
+      console.log(new Date().getSeconds(),"Hello")
+    }
+    // function for start button which is used in click envent
+    function startDate() {
+     intervalId = setInterval(setDate, 1000)
+    }
+    // function for stop button which is used in click envent
+    function stopDate() {
+      clearInterval(intervalId)
+    }
+    document.querySelector('#start').addEventListener('click',startDate)
+    document.querySelector('#stop').addEventListener('click',stopDate)
+  </script>
+</html>

@@ -1,0 +1,62 @@
+package org.example;
+
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.example.email.*;
+
+import javax.swing.*;
+import java.awt.*;
+import java.io.InputStream;
+import java.util.Properties;
+
+public  class Main {
+    public static void main(String[] args) {
+        Properties properties = new Properties();
+
+        JLabel statusLabel = new JLabel();
+        try(InputStream input = Main.class.getClassLoader().getResourceAsStream("config.properties")) {
+            if (input == null ){
+                System.out.println("config.properties が見つかりません");
+                return;
+            }
+            // load a properties file form class path, inside static method
+            properties.load(input);
+
+            // Get property values form the config properties
+            String serverHost = properties.getProperty("serverHost");
+            String emailAddress = properties.getProperty("emailAddress");
+            String emailPassword = properties.getProperty("emailPassword");
+            int port = Integer.parseInt(properties.getProperty("port"));
+
+            // Enable IMAPS
+            properties.setProperty("mail.imap.ssl.enable","true");
+
+            // set IMAP connection timeout
+            properties.setProperty("mail.imap.connectiontimeout","10000");
+
+            // Define headers to extracted from emails
+            String[] headers = {
+                    "No.", "メール送信者", "表題", "紹介会社", "名前", "ヨミガナ", "国籍", "応募日", "住まい", "年齢", "日本語能力", "経験",
+                    "現年収", "希望年収", "最低希望年収", "コメント", "ステータス", "書類審査", "一次面接日", "二次面接日", "内定日", "入社日"
+            };
+            Workbook workbook = new XSSFWorkbook();
+            EmailProcess emailProcessor = new EmailProcess(properties,serverHost, emailAddress, emailPassword, port, headers,workbook);
+//            emailProcessor.processEmailGenerateExcel();
+            String filePath =emailProcessor.processEmailGenerateExcel();
+
+            if (filePath != null) {
+                JLabel filePathLabel = new JLabel("Excel ファイルが正常に作成されました。ファイルパスは " + filePath + " です。");
+                JFrame frame = new JFrame("File Path");
+                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                frame.setLayout(new FlowLayout());
+                frame.add(filePathLabel);
+                frame.pack();
+                frame.setVisible(true);
+            }
+
+        } catch (Exception e) {
+            statusLabel.setText("config.properties の読み取り中にエラーが発生しました。");
+            e.printStackTrace();
+        }
+    }
+}

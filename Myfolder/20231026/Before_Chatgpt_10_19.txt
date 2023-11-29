@@ -1,0 +1,86 @@
+using MailKit;
+using MailKit.Net.Imap;
+using MailKit.Search;
+using OfficeOpenXml;
+using Microsoft.Office.Interop.Outlook;
+
+namespace ExtractingData
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            // mail server connection settings
+            string emailServer = "imap.gmail.com";       // IMAP Server (Outlook IMAP Sercer ➡"outlook.office365.com")
+            string emailAddress = "something@gmail.com";        //Email address (receiver/your Email Address)
+            string emailPassword = "password";          // password
+
+            using var client = new ImapClient();
+            client.Connect(emailServer,993,true);
+            client.Authenticate(emailAddress,emailPassword);
+
+            // Opent the inbox folder
+            var inbox = client.Inbox;
+            inbox.Open(FolderAccess.ReadOnly);
+
+            // search for specific email 
+            var SearchResult = inbox.Search(SearchQuery.SubjectContains("Specific Subject"));
+
+            // create a new excel package
+            using (var package = new ExcelPackage())
+            {
+                // add a worksheet to the excel package
+                var worksheet = package.Workbook.Worksheets.Add("Outlook Data");
+
+                // get outlook application object
+                Application outlook = new Application();
+                NameSpace outlookNamespace = outlook.GetNamespace("MAPI");
+                MAPIFolder inboxFolder = outlookNamespace.GetDefaultFolder(OlDefaultFolders.olFolderInbox);
+
+                // Initalize row counter 
+                int row = 1;
+
+                // Iterate through the items in the Inbox folder
+                // foreach (object item in inboxFolder.Items)
+                foreach (var index in SearchResult )
+                {
+                    if (item is MailItem)
+                    {
+                        MailItem mailItem = (MailItem)item;
+                        //extract the sender and subject
+
+                        // check for null email body 
+                        if (mailItem != null) 
+                        {
+                            // Extract the sender and subject
+                            string emailSender = mailItem.SenderName;
+                            string emailSubject = mailItem.Subject;
+
+                            string emailBody = mailItem.Body;
+                            string pattern = " *: ";
+                            int startIndex = emailBody.IndexOf(pattern);
+
+                            if (startIndex > 0)
+                            {
+                                string emailHeader  = emailBody.Substring(0, startIndex);
+                                string extractedText = emailBody.Substring (startIndex + pattern.Length).Trim();
+
+                                // write data to excel worksheet
+                                worksheet.Cells[row, 1].Value = emailSender;
+                                worksheet.Cells[row, 2].Value = emailSubject;
+                                worksheet.Cells[row, 3].Value = emailHeader;
+                                worksheet.Cells[row, 4].Value = extractedText;
+
+                                // move to the next row for the new email 
+                                row ++;
+                            }
+                        }
+                    }
+                }
+                // save the excel file 
+                package.SaveAs(new System.IO.FileInfo("OutlooksDataDocument.xlsx"));
+                Console.WriteLine("Outlook data extracting and saved to excel file.");
+            }
+        }
+    }
+}

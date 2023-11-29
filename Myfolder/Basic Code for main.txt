@@ -1,0 +1,146 @@
+package org.example;
+
+import org.example.email.*;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.Properties;
+
+public class Main {
+    private static final String Default_Server_Host = "jobtkk.co.jp";    //jobtkk.co.jp
+    private static final String Default_Email_Address = "manish2022job@gmail.com";
+    private static final int Default_Port = 993;
+
+
+    private static JTextField serverHostField;
+    private static JTextField emailAddressField;
+    private static JPasswordField passwordField;
+    private static JTextField portField;
+    private static JLabel statusLabel;
+    private static JLabel outputMessageLabel;
+
+
+
+    public static void main(String[] args) {
+        JFrame frame = new JFrame("Email Processing Tool");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLayout(new BorderLayout());
+
+        // Create a panel for the input fields
+        JPanel inputPanel = createInputPanel();
+        frame.add(inputPanel, BorderLayout.NORTH);
+
+        // Create a panel for the status label
+        JPanel statusPanel = new JPanel(new FlowLayout());
+        statusLabel = new JLabel();
+        outputMessageLabel = new JLabel();
+        statusPanel.add(outputMessageLabel);
+        frame.add(statusPanel, BorderLayout.SOUTH);
+
+        // Create a button to trigger the email processing
+        JButton processButton = new JButton("Generate Excel");
+
+        processButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String serverHost = serverHostField.getText();
+                String emailAddress = emailAddressField.getText();
+                String emailPassword = new String(passwordField.getPassword());
+                int port = Integer.parseInt(portField.getText());
+
+
+
+                String[] headers = {
+                        "No.", "メール送信者", "表題", "紹介会社", "名前", "ヨミガナ", "国籍", "応募日", "住まい", "年齢", "日本語能力", "経験",
+                        "現年収", "希望年収", "最低希望年収", "コメント", "ステータス", "書類審査", "一次面接日", "二次面接日", "内定日", "入社日"
+                };
+
+                Properties emailProperties = new Properties();
+                emailProperties.setProperty("mail.store.protocol", "imaps");
+                emailProperties.put("mail.imaps.host", serverHost);
+                emailProperties.put("mail.user", emailAddress);
+                emailProperties.put("mail.password", emailPassword);
+                emailProperties.put("mail.imaps.ports",String.valueOf(port));
+
+                EmailProcess emailProcessor = new EmailProcess(emailProperties,serverHost, emailAddress, emailPassword, port, headers,null);
+                String filePath = emailProcessor.processEmailGenerateExcel();
+
+                if (filePath != null) {
+                    outputMessageLabel.setText("Excel ファイルが正常に作成されました。ファイルパスは " + filePath + " です。");
+                } else {
+                    outputMessageLabel.setText("Excel ファイルの作成中にエラーが発生しました。");
+                }
+            }
+        });
+
+        // Create a panel for the button
+        JPanel buttonPanel = new JPanel(new FlowLayout());
+        buttonPanel.add(processButton);
+        frame.add(buttonPanel, BorderLayout.CENTER);
+
+
+
+        //set default value of the server host, email address and port
+        serverHostField.setText(Default_Server_Host);
+        emailAddressField.setText(Default_Email_Address);
+        portField.setText(String.valueOf(Default_Port));
+
+        // Set font size for components
+        Font labelFont = new Font("Meiryo UI", Font.BOLD, 16); // Adjust the font size as needed
+        Font textFieldFont = new Font("Meiryo UI", Font.PLAIN, 16); // Adjust the font size as needed
+        Font buttonFont = new Font("Meiryo UI", Font.PLAIN, 16);
+
+        serverHostLabel.setFont(labelFont);
+        emailAddressLabel.setFont(labelFont);
+        passwordLabel.setFont(labelFont);
+        portLabel.setFont(labelFont);
+
+        serverHostField.setFont(textFieldFont);
+        emailAddressField.setFont(textFieldFont);
+        passwordField.setFont(textFieldFont);
+        portField.setFont(textFieldFont);
+
+        processButton.setFont(buttonFont);
+
+        // Set frame properties
+        frame.setSize(600, 400);
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+    }
+    private static JLabel serverHostLabel;
+    private static JLabel emailAddressLabel;
+    private static JLabel passwordLabel;
+    private static JLabel portLabel;
+
+    private static JPanel createInputPanel() {
+        JPanel panel = new JPanel(new GridLayout(4, 2, 10, 10)); // GridLayout(rows, cols, hgap, vgap)
+        panel.setBorder(new EmptyBorder(15, 15, 15, 15));
+
+        // Create JLabels for serverHost, emailAddress, password, and port
+        serverHostLabel = new JLabel("Server Host:");
+        emailAddressLabel = new JLabel("Email Address:");
+        passwordLabel = new JLabel("Email Password:");
+        portLabel = new JLabel("Port:");
+
+        // Create JTextFields and JPasswordField
+        serverHostField = new JTextField();
+        emailAddressField = new JTextField();
+        passwordField = new JPasswordField();
+        portField = new JTextField();
+
+        // Add JLabels, JTextFields, and JPasswordField to the panel
+        panel.add(serverHostLabel);
+        panel.add(serverHostField);
+        panel.add(emailAddressLabel);
+        panel.add(emailAddressField);
+        panel.add(passwordLabel);
+        panel.add(passwordField);
+        panel.add(portLabel);
+        panel.add(portField);
+
+        return panel;
+    }
+}

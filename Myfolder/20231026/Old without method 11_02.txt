@@ -1,0 +1,120 @@
+    //    public void processEmailGenerateExcel1() {
+//        Properties properties = new Properties();
+//        properties.setProperty("mail.store.protocol", "imaps");
+//        properties.setProperty("mail.imaps.host", serverHost);
+//        properties.setProperty("mail.imaps.port", String.valueOf(port));
+//
+//        try (Workbook workbook = new XSSFWorkbook()) {
+//            // Connection to the email server
+//            Session session = Session.getInstance(properties, null);
+//            Store store = session.getStore();
+//            store.connect(serverHost, emailAddress, emailPassword);
+//
+//            // Accessing the inbox folder
+//            Folder inbox = store.getFolder("INBOX");
+//            inbox.open(Folder.READ_WRITE);
+//            Message[] messages = inbox.getMessages();
+//
+//            // validating the header array
+//            if (headers == null || headers.length == 0) {
+//                throw new IllegalArgumentException("The headers array must not be null or empty");
+//            }
+//            for (String header : headers) {
+//                if (header == null || header.isEmpty()) {
+//                    throw new IllegalArgumentException("The headers array must contain only valid strings");
+//                }
+//            }
+//            // Creating Excel worksheet and headers
+//            Sheet worksheet = workbook.createSheet("Outlook Extracted Data");
+//
+//            Row headerRow = worksheet.createRow(0);
+//
+//            // Creating a cell style with centered alignment for headers
+//            CellStyle headerCellStyle = workbook.createCellStyle();
+//            headerCellStyle.setAlignment(HorizontalAlignment.CENTER);
+//
+//            // Setting font for headerCellStyle
+//            Font headerFont = workbook.createFont();
+//            headerFont.setFontName("Meiryo UI");
+//            headerFont.setFontHeightInPoints((short) 10);
+//            headerCellStyle.setFont(headerFont);
+//
+//            // Create a cell style with centered alignment for other cells
+//            CellStyle cellStyle = workbook.createCellStyle();
+//
+//            // Setting font for cellStyle
+//            Font cellFont = workbook.createFont();
+//            cellFont.setFontName("Meiryo UI");
+//            cellFont.setFontHeightInPoints((short) 9);
+//            cellStyle.setFont(cellFont);
+//
+//            for (int i = 0; i < headers.length; i++) {
+//                Cell cell = headerRow.createCell(i);
+//                cell.setCellValue(headers[i]);
+//                cell.setCellStyle(headerCellStyle);
+//                // apply font style to all cell cells in the worksheet
+//                worksheet.setDefaultColumnStyle(i, cellStyle);
+//            }
+//            // Processing emails and populating Excel
+//            int rowNum = 1;
+//            int number = 1;
+//            for (Message message : messages) {
+//                try {
+//                    String emailSender = extractSenderEmail(message);
+//                    String emailSubject = extractSubject(message);
+//                    String emailBody = getEmailBody(message);
+//                    String senderName = extractReceivedCompanyName(message);
+//
+//                    // Create unique key using sender's email and a hash of email body text
+//                    String uniqueKey = emailSender + "_" + emailBody.hashCode();
+//
+//                    // Check if the unique key is already processed
+//                    if (uniqueEmails.contains(uniqueKey)) {
+//                        continue;
+//                    } else {
+//                        uniqueEmails.add(uniqueKey);
+//                    }
+//
+//                    Row row = worksheet.createRow(rowNum++);
+//                    row.createCell(0).setCellValue(number++);
+//                    row.createCell(1).setCellValue(emailSender);
+//                    row.createCell(2).setCellValue(emailSubject);
+//                    row.createCell(3).setCellValue(senderName);
+//
+//                    for (int i = 4; i < headers.length; i++) {
+//                        String header = headers[i];
+//                        String extractedValue = extractValueFromHeader(header, emailBody);
+//                        Cell cell = row.createCell(i);
+//                        cell.setCellValue(extractedValue);
+//                    }
+//                    // extracted received data and store in the 応募日 header
+//                    Date receivedDate = message.getReceivedDate();
+//                    if (receivedDate != null) {
+//                        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
+//                        String formattedReceivedDate = dateFormat.format(receivedDate);
+//                        row.createCell(Arrays.asList(headers).indexOf("応募日")).setCellValue(formattedReceivedDate);
+//                    } else {
+//                        row.createCell(Arrays.asList(headers).indexOf("応募日")).setCellValue("---");
+//                    }
+//                    // Set "ステータス" header to a fixed value of "書類選考"
+//                    row.createCell(Arrays.asList(headers).indexOf("ステータス")).setCellValue("書類選考");
+//
+//                    message.setFlag(Flags.Flag.SEEN, true);
+//                } catch (Exception e) {
+//                    System.out.println("Error processing email: " + e.getMessage());
+//                }
+//            }
+//            // Automatically adjust column width based on content
+//            for (int i = 0; i < headers.length; i++) {
+//                worksheet.autoSizeColumn(i);
+//                int currentWidth = worksheet.getColumnWidth(i);
+//                worksheet.setColumnWidth(i,   currentWidth + 2 * 256); // Adding 2 characters' width as extra space
+//            }
+//            // Saving the worksheet to a physical file on the disk
+//            saveExcelFile(workbook);
+//
+//            store.close();
+//        } catch (Exception e) {
+//            System.out.println("An unexpected error occurred: " + e.getMessage());
+//        }
+//    }

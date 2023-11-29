@@ -1,0 +1,17 @@
+# Configuration for accessing outlook via IMAP
+serverHost = imap.gmail.com
+# Configuration for accessing email address
+emailAddress = manish2022job@gmail.com
+# Configuration for accessing email password
+emailPassword = igsv geqg mqwk smpq and imfj gsds iptv vpjg
+# Configuration for accessing IMAP port
+port = 993
+
+
+
+igsvgeqgmqwksmpq
+
+imfjgsdsiptvvpjg
+
+
+("<html>Excel ファイルの保存中にエラーが発生しました。<br>詳細: " + ex.getMessage() + "</html>");

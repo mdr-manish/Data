@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edit and Remove using Javascript</title>
+  </head>
+  <body style="background-color: #212121; color: #fff">
+    <ul class="language">
+      <li>Javascript</li>
+    </ul>
+  </body>
+  <script>
+    // function addLanguage(langName) {
+    //   const li = document.createElement("li");
+    //   li.innerHTML = `${langName}`;
+    //   document.querySelector(".language").appendChild(li);
+    // }
+
+    // Optimize process
+    function addOptLanguage(langName) {
+      const li = document.createElement("li");
+      li.appendChild(document.createTextNode(langName))
+      document.querySelector('.language').appendChild(li)
+    }
+
+    addOptLanguage("Go Lang")
+    addOptLanguage("Python")
+    addOptLanguage("Java")
+
+    // Edit
+    const secondLang = document.querySelector('li:nth-child(2)')
+    const newline = document.createElement('li')
+    newline.textContent = "Mojo"
+    secondLang.replaceWith(newline)
+
+    // Remove
+    const lastLang = document.querySelector('li:last-child')
+    lastLang.remove()
+  </script>
+</html>
